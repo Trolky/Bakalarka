@@ -23,7 +23,6 @@ class LoadFromFileFrame(ttk.Frame):
 
         # Processing state variables
         self.is_processing = False
-        self.processing_thread = None
         self.selected_file_path = None
         self.transcription_result = None
         self.paraphrased_result = None
