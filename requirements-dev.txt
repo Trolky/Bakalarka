@@ -1,0 +1,17 @@
+-r requirements.txt
+
+coverage~=7.2.5
+docutils~=0.20.1
+
+pybuilder
+assertpy~=1.1
+pytest~=7.3.1
+Sphinx~=7.0.0
+sphinx-autodoc-typehints~=1.23.0
+m2r2~=0.3.1
+cython~=0.29.22; python_version <= '3.7'
+cython~=3.0.10; python_version > '3.7'
+darglint~=1.8.1
+flake8~=6.0.0
+flake8-docstrings~=1.7.0
+docstr-coverage~=2.3.0

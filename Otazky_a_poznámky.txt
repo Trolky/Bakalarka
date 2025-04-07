@@ -1,0 +1,10 @@
+Otázky:
+- Bylo by možné zařídit server? -> Byl by backend(STT,Parafrazing a TTS) na serveru a pomocí API by se to volalo.
+- Jaké výstupní formáty by měla aplikace podporovat?
+- Při živé transkripci řeči na text, počkat až uživatel ukončí nahravání a pak udělat parafrázování a tts nebo to dělat při tom?
+
+Poznámky:
+- gui zatím není rosponzivní(bude uděláno).
+- Zatím je hotova pouze pipelina ze souboru(dále bude přidána živá transkripce).
+- Pokud se sežene server, tak se přidá databáze a uživatel potom může v databázi hledat už vytvořené přednášky.
+- U parafrázování vždy končit chunkem celou větu.(Dodělat)
