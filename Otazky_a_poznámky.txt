@@ -7,4 +7,4 @@ Poznámky:
 - gui zatím není rosponzivní(bude uděláno).
 - Zatím je hotova pouze pipelina ze souboru(dále bude přidána živá transkripce).
 - Pokud se sežene server, tak se přidá databáze a uživatel potom může v databázi hledat už vytvořené přednášky.
-- U parafrázování vždy končit chunkem celou větu.(Dodělat)
+- Přidat i tts s elevenlabs.(Jen kdyby v budoucnu bylo potřeba lepší kavlity)

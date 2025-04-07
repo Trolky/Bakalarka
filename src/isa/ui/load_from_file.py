@@ -1,10 +1,10 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import os
-import threading
-import time
+
 from src.isa.stt.speech_to_text import SpeechToText
 from src.isa.paraphrasing.paraphrasing import TextParaphraser
+from src.isa.tts.text_to_speech import TextToSpeech
 
 
 class LoadFromFileFrame(ttk.Frame):
@@ -17,6 +17,9 @@ class LoadFromFileFrame(ttk.Frame):
         self.speech_to_text = SpeechToText()
         # Initialize paraphraser
         self.text_paraphraser = TextParaphraser()
+
+        self.text_to_speech = TextToSpeech()
+        self.audio_paths = []
 
         # Processing state variables
         self.is_processing = False
@@ -89,8 +92,12 @@ class LoadFromFileFrame(ttk.Frame):
 
         # Paraphrasing options tab
         paraphrase_tab = ttk.Frame(notebook)
-        notebook.add(paraphrase_tab, text="Parafráze")
+        notebook.add(paraphrase_tab, text="Parafrázování")
         self.create_paraphrasing_options(paraphrase_tab)
+
+        tts_tab = ttk.Frame(notebook)
+        notebook.add(tts_tab, text="TTS")
+        self.create_tts_options(tts_tab)
 
         # Process button
         self.process_btn = ttk.Button(options_frame, text="Zpracovat soubor",
@@ -106,6 +113,105 @@ class LoadFromFileFrame(ttk.Frame):
         self.status_var = tk.StringVar(value="Připraveno")
         status_label = ttk.Label(options_frame, textvariable=self.status_var)
         status_label.pack(anchor="w", pady=5)
+
+    def create_tts_options(self, parent):
+        """Create text-to-speech options."""
+        # Enable TTS option
+        enable_frame = ttk.Frame(parent)
+        enable_frame.pack(fill=tk.X, pady=5)
+        self.enable_tts_var = tk.BooleanVar(value=True)
+        enable_check = ttk.Checkbutton(
+            enable_frame,
+            text="Povolit převod textu na řeč",
+            variable=self.enable_tts_var,
+            command=self.toggle_tts_options
+        )
+        enable_check.pack(anchor="w", pady=2)
+
+        # Voice selection
+        voice_frame = ttk.Frame(parent)
+        voice_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(voice_frame, text="Hlas:").pack(side=tk.LEFT)
+        voices = [f"{k} ({v})" for k, v in self.text_to_speech.get_available_voices().items()]
+        self.voice_combo = ttk.Combobox(voice_frame, state="readonly", values=voices)
+        self.voice_combo.current(0)  # Default to first voice
+        self.voice_combo.pack(side=tk.LEFT, padx=(5, 0))
+
+        # Output format
+        format_frame = ttk.Frame(parent)
+        format_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(format_frame, text="Formát:").pack(side=tk.LEFT)
+        formats = ["wav", "mp3"]
+        self.format_combo = ttk.Combobox(format_frame, state="readonly", values=formats)
+        self.format_combo.current(0)  # Default to wav
+        self.format_combo.pack(side=tk.LEFT, padx=(5, 0))
+
+        # Chunk size
+        chunk_frame = ttk.Frame(parent)
+        chunk_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(chunk_frame, text="Velikost části (znaky):").pack(side=tk.LEFT)
+        self.chunk_size_var = tk.StringVar(value="4000")
+        chunk_entry = ttk.Entry(chunk_frame, textvariable=self.chunk_size_var, width=10)
+        chunk_entry.pack(side=tk.LEFT, padx=(5, 0))
+
+        # Output directory options
+        dir_frame = ttk.LabelFrame(parent, text="Umístění výstupu (povinné)", padding=5)
+        dir_frame.pack(fill=tk.X, pady=5)
+
+        # Output directory selection
+        output_dir_frame = ttk.Frame(dir_frame)
+        output_dir_frame.pack(fill=tk.X, pady=5)
+
+        self.output_dir_var = tk.StringVar()
+        self.output_dir_entry = ttk.Entry(output_dir_frame, textvariable=self.output_dir_var, width=40)
+        self.output_dir_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        self.browse_dir_btn = ttk.Button(
+            output_dir_frame,
+            text="Procházet...",
+            command=self.browse_output_dir
+        )
+        self.browse_dir_btn.pack(side=tk.RIGHT, padx=(5, 0))
+
+        # File naming options
+        naming_frame = ttk.LabelFrame(parent, text="Pojmenování souboru", padding=5)
+        naming_frame.pack(fill=tk.X, pady=5)
+
+        # File name
+        prefix_frame = ttk.Frame(naming_frame)
+        prefix_frame.pack(fill=tk.X, pady=2)
+        ttk.Label(prefix_frame, text="Název souboru:").pack(side=tk.LEFT)
+        self.file_prefix_var = tk.StringVar(value="")
+        prefix_entry = ttk.Entry(prefix_frame, textvariable=self.file_prefix_var, width=20)
+        prefix_entry.pack(side=tk.LEFT, padx=(5, 0))
+
+        # Naming pattern explanation
+        naming_info = ttk.Label(
+            naming_frame,
+            text="Pokud nezadáte název, bude použit název vstupního souboru.",
+            wraplength=400,
+            justify="left"
+        )
+        naming_info.pack(anchor="w", pady=5)
+
+
+    def toggle_tts_options(self):
+        """Enable or disable TTS options based on the TTS checkbox."""
+        # This method is called when the TTS checkbox is toggled
+        if self.enable_tts_var.get():
+            # TTS is enabled, ensure output directory is set
+            if not self.output_dir_var.get():
+                # Set default output directory based on input file if available
+                if self.selected_file_path:
+                    input_filename = os.path.splitext(os.path.basename(self.selected_file_path))[0]
+                    default_dir = os.path.join(os.path.dirname(self.selected_file_path), f"{input_filename}_audio")
+                    self.output_dir_var.set(default_dir)
+
+    def browse_output_dir(self):
+        """Open a directory selection dialog."""
+        dir_path = filedialog.askdirectory()
+        if dir_path:
+            self.output_dir_var.set(dir_path)
 
     def create_basic_options(self, parent):
         """Create basic transcription options."""
@@ -302,6 +408,7 @@ class LoadFromFileFrame(ttk.Frame):
         )
         self.paraphrase_radio.pack(side=tk.LEFT)
 
+
         # Output preview
         preview_frame = ttk.Frame(output_frame)
         preview_frame.pack(fill=tk.BOTH, expand=True, pady=5)
@@ -373,13 +480,17 @@ class LoadFromFileFrame(ttk.Frame):
             messagebox.showwarning("Upozornění", "Nejprve vyberte soubor ke zpracování.")
             return
 
+        if self.enable_tts_var.get() and not self.output_dir_var.get():
+            messagebox.showerror("Chyba", "Pro generování audia je nutné zadat výstupní adresář.")
+            return
+
         if self.is_processing:
             messagebox.showinfo("Informace", "Zpracování již probíhá.")
             return
 
         self.is_processing = True
         self.process_btn.config(state=tk.DISABLED)
-        self.status_var.set("Zpracování...")
+        self.status_var.set("Probíhá převod řeči na text...")
         self.progress_var.set(0)
 
         # Clear output
@@ -460,6 +571,70 @@ class LoadFromFileFrame(ttk.Frame):
             if self.enable_paraphrase_var.get():
                 self.paraphrase_transcription()
 
+    def generate_audio(self):
+        """Generate audio from the paraphrased text only."""
+        # Only use paraphrased text for TTS
+        if not self.paraphrased_result:
+            messagebox.showwarning("Upozornění", "Nejsou k dispozici žádné výsledky parafráze pro generování audia.")
+            return
+
+        # Check if output directory is specified
+        if not self.output_dir_var.get():
+            messagebox.showerror("Chyba", "Pro generování audia je nutné zadat výstupní adresář.")
+            return
+
+        text = self.paraphrased_result
+
+        # Get selected voice
+        voice_selection = self.voice_combo.get()
+        voice = voice_selection.split(" ")[0]  # Extract voice key from combo box
+
+        # Get output format
+        output_format = self.format_combo.get()
+
+        # Get chunk size
+        try:
+            chunk_size = int(self.chunk_size_var.get())
+        except ValueError:
+            chunk_size = 4000
+            self.chunk_size_var.set("4000")
+
+        # Get output directory
+        output_dir = self.output_dir_var.get()
+
+        # Ensure output directory exists
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Get file name
+        file_name = self.file_prefix_var.get()
+        if not file_name:
+            # Use input filename if no custom name provided
+            file_name = os.path.splitext(os.path.basename(self.selected_file_path))[0]
+
+        # Create full output path
+        output_path = os.path.join(output_dir, f"{file_name}.{output_format}")
+
+        self.status_var.set("Probíhá generování audia z parafráze...")
+
+        try:
+            # Use the new method to generate a single audio file
+            audio_path = self.text_to_speech.generate_single_audio_file(
+                text=text,
+                voice=voice,
+                output_format=output_format,
+                output_path=output_path,
+                chunk_size=chunk_size,
+                progress_callback=lambda p: self.progress_var.set(p)
+            )
+
+            self.audio_paths = [audio_path]  # Store the path for potential download
+
+            self.status_var.set(f"Audio vygenerováno: {audio_path}")
+            messagebox.showinfo("Úspěch", f"Audio soubor byl vygenerován:\n{audio_path}")
+        except Exception as e:
+            self.status_var.set(f"Chyba generování audia: {str(e)}")
+            messagebox.showerror("Chyba", f"Nelze vygenerovat audio: {str(e)}")
+
     def paraphrase_transcription(self):
         """Paraphrase the transcription result."""
         if not self.transcription_result:
@@ -471,7 +646,7 @@ class LoadFromFileFrame(ttk.Frame):
             return
 
         self.is_processing = True
-        self.status_var.set("Parafráze probíhá...")
+        self.status_var.set("Probíhá parafrázování...")
         self.progress_var.set(0)
 
         # Get selected paraphrasing options
@@ -519,6 +694,10 @@ class LoadFromFileFrame(ttk.Frame):
             # Switch to paraphrase view
             self.output_type_var.set("paraphrase")
             self.switch_output_view()
+
+            # Now that paraphrasing is complete, generate audio if TTS is enabled
+            if self.enable_tts_var.get():
+                self.generate_audio()
 
     def switch_output_view(self):
         """Switch between original transcription and paraphrased view."""
@@ -572,6 +751,18 @@ class LoadFromFileFrame(ttk.Frame):
             except Exception as e:
                 self.status_var.set(f"Chyba při ukládání: {str(e)}")
                 messagebox.showerror("Chyba", f"Nelze uložit soubor: {str(e)}")
+
+        if self.audio_paths:
+            # Create a zip file with all audio files
+            import zipfile
+            zip_path = os.path.join(os.path.dirname(save_path),
+                                    f"{os.path.splitext(os.path.basename(save_path))[0]}_audio.zip")
+
+            with zipfile.ZipFile(zip_path, 'w') as zipf:
+                for audio_path in self.audio_paths:
+                    zipf.write(audio_path, os.path.basename(audio_path))
+
+            messagebox.showinfo("Úspěch", f"Audio soubory byly zabaleny do:\n{zip_path}")
 
     def copy_to_clipboard(self):
         """Copy the output to clipboard."""
