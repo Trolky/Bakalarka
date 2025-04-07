@@ -1,3 +1,4 @@
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 import os
@@ -19,6 +20,7 @@ class LectureAutomationApp(tk.Tk):
         self.title("Lecture Recording Automation System")
         self.geometry("1200x700")
         self.minsize(800, 600)
+        self.resizable(False, False)  # Make window not resizable
 
         # Set theme
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -26,17 +28,28 @@ class LectureAutomationApp(tk.Tk):
         self.tk.call("source", theme_path)
         self.tk.call("set_theme", "dark")
 
+        # Configure grid for responsiveness
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
 
         # Create the main container
         self.main_container = ttk.Frame(self)
-        self.main_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self.main_container.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+
+        # Configure main container grid
+        self.main_container.grid_columnconfigure(1, weight=1)
+        self.main_container.grid_rowconfigure(0, weight=1)
 
         # Create the sidebar for navigation
         self.setup_sidebar()
 
         # Create the content area
         self.content = ttk.Frame(self.main_container)
-        self.content.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(10, 0))
+        self.content.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
+
+        # Configure content grid
+        self.content.grid_columnconfigure(0, weight=1)
+        self.content.grid_rowconfigure(0, weight=1)
 
         # Initialize frames dictionary
         self.frames = {}
@@ -55,12 +68,15 @@ class LectureAutomationApp(tk.Tk):
 
         # Create a frame for the sidebar
         sidebar = ttk.Frame(self.main_container, width=200, style="Sidebar.TFrame")
-        sidebar.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10), pady=0)
-        sidebar.pack_propagate(False)  # Force the set width
+        sidebar.grid(row=0, column=0, sticky="ns")
+        sidebar.grid_propagate(False)  # Force the set width
+
+        # Configure sidebar grid
+        sidebar.grid_columnconfigure(0, weight=1)
 
         # Application title/logo area
         logo_frame = ttk.Frame(sidebar)
-        logo_frame.pack(fill=tk.X, pady=(0, 20))
+        logo_frame.grid(row=0, column=0, sticky="ew", pady=(0, 20))
 
         title = ttk.Label(logo_frame, text="LectureAuto", font=("Arial", 16, "bold"))
         title.pack(pady=10)
@@ -73,13 +89,13 @@ class LectureAutomationApp(tk.Tk):
             ("Nastavení", "settings", "Nastavení")
         ]
 
-        for text, frame_id, tooltip in nav_buttons:
+        for i, (text, frame_id, tooltip) in enumerate(nav_buttons):
             btn = ttk.Button(sidebar, text=text, command=lambda f=frame_id: self.show_frame(f), width=18)
-            btn.pack(pady=5, padx=10, fill=tk.X)
+            btn.grid(row=i + 1, column=0, pady=5, padx=10, sticky="ew")
 
         # Version info at bottom of sidebar
         version_label = ttk.Label(sidebar, text="Version 1.0.0", font=("Arial", 8))
-        version_label.pack(side=tk.BOTTOM, pady=10)
+        version_label.grid(row=99, column=0, pady=10, sticky="s")  # High row number to push to bottom
 
     def create_frames(self):
         """Create all application frames."""
@@ -93,6 +109,12 @@ class LectureAutomationApp(tk.Tk):
         # Place all frames in the same position
         for frame in self.frames.values():
             frame.grid(row=0, column=0, sticky="nsew")
+
+            # Make sure each frame is also responsive
+            if hasattr(frame, 'grid_columnconfigure'):
+                frame.grid_columnconfigure(0, weight=1)
+            if hasattr(frame, 'grid_rowconfigure'):
+                frame.grid_rowconfigure(0, weight=1)
 
     def show_frame(self, frame_id):
         """Raise the specified frame to the top."""

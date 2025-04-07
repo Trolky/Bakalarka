@@ -28,14 +28,21 @@ class LoadFromFileFrame(ttk.Frame):
         self.transcription_result = None
         self.paraphrased_result = None
 
+        # Configure the frame for responsiveness
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+
+        # Create scrollable frame
+        self.create_scrollable_frame()
+
         # Main title
-        title_frame = ttk.Frame(self)
+        title_frame = ttk.Frame(self.scrollable_frame)
         title_frame.pack(fill=tk.X, pady=(0, 15))
         title_label = ttk.Label(title_frame, text="Nahrávání ze záznamu", font=("Arial", 18, "bold"))
         title_label.pack(side=tk.LEFT)
 
         # Main content
-        content_frame = ttk.Frame(self)
+        content_frame = ttk.Frame(self.scrollable_frame)
         content_frame.pack(fill=tk.BOTH, expand=True)
 
         # File selection area
@@ -46,6 +53,77 @@ class LoadFromFileFrame(ttk.Frame):
 
         # Output area
         self.create_output_area(content_frame)
+
+    def create_scrollable_frame(self):
+        """Create a scrollable frame to contain all content with optimized performance."""
+        # Create a canvas with scrollbar
+        self.canvas = tk.Canvas(self, highlightthickness=0)
+        self.canvas.grid(row=0, column=0, sticky="nsew")
+
+        # Add vertical scrollbar to canvas
+        self.scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.scrollbar.grid(row=0, column=1, sticky="ns")
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        # Create a frame inside the canvas to hold the content
+        self.scrollable_frame = ttk.Frame(self.canvas)
+        self.scrollable_frame_id = self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+
+        # Configure the scrollable frame to expand to the canvas width
+        self.scrollable_frame.bind("<Configure>", self.on_frame_configure)
+        self.canvas.bind("<Configure>", self.on_canvas_configure)
+
+        # Performance optimization: Set canvas attributes
+        self.canvas.configure(
+            # Reduce overdraw with proper scroll region
+            scrollregion=(0, 0, 500, 1000),
+            # Double buffering for smoother rendering
+            confine=True,
+            # Disable border highlight for better performance
+            highlightthickness=0
+        )
+
+        # Bind mousewheel to scroll
+        self.bind_mousewheel()
+
+    def on_frame_configure(self, event):
+        """Reset the scroll region to encompass the inner frame with performance optimization."""
+        # Update scroll region only when needed
+        new_region = self.canvas.bbox("all")
+        current_region = self.canvas.cget("scrollregion").split()
+
+        # Only update if significantly different to reduce redraw operations
+        if not current_region or abs(int(float(current_region[3])) - new_region[3]) > 20:
+            self.canvas.configure(scrollregion=new_region)
+
+    def on_canvas_configure(self, event):
+        """When canvas is resized, resize the inner frame to match with performance optimization."""
+        # Update the width of the frame to match the canvas
+        canvas_width = event.width
+        self.canvas.itemconfig(self.scrollable_frame_id, width=canvas_width)
+
+    def bind_mousewheel(self):
+        """Bind mousewheel events to the canvas for scrolling with improved performance."""
+
+        def _on_mousewheel(event):
+            # Determine scroll direction and amount
+            if event.num == 4 or event.delta > 0:
+                # Scroll up - use larger units for smoother scrolling
+                self.canvas.yview_scroll(-3, "units")
+            elif event.num == 5 or event.delta < 0:
+                # Scroll down - use larger units for smoother scrolling
+                self.canvas.yview_scroll(3, "units")
+
+        # Bind for different platforms
+        self.canvas.bind_all("<MouseWheel>", _on_mousewheel)  # Windows and MacOS
+        self.canvas.bind_all("<Button-4>", _on_mousewheel)  # Linux scroll up
+        self.canvas.bind_all("<Button-5>", _on_mousewheel)  # Linux scroll down
+
+    def unbind_mousewheel(self):
+        """Unbind mousewheel events when frame is not visible."""
+        self.canvas.unbind_all("<MouseWheel>")
+        self.canvas.unbind_all("<Button-4>")
+        self.canvas.unbind_all("<Button-5>")
 
     def create_file_selection_area(self, parent):
         """Create the file selection area."""
