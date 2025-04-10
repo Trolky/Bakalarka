@@ -94,13 +94,11 @@ class LectureAutomationApp(tk.Tk):
             btn.grid(row=i + 1, column=0, pady=5, padx=10, sticky="ew")
 
         # Version info at bottom of sidebar
-        version_label = ttk.Label(sidebar, text="Version 1.0.0", font=("Arial", 8))
+        version_label = ttk.Label(sidebar, text="Verze 1.0.0", font=("Arial", 8))
         version_label.grid(row=99, column=0, pady=10, sticky="s")  # High row number to push to bottom
 
     def create_frames(self):
         """Create all application frames."""
-
-        # Create each frame and add to the dictionary
         self.frames["dashboard"] = DashboardFrame(self.content, self)
         self.frames["recording"] = RecordingFrame(self.content, self)
         self.frames["load_from_file"] = LoadFromFileFrame(self.content, self)

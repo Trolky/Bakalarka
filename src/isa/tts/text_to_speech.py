@@ -4,6 +4,7 @@ import tempfile
 from requests.auth import HTTPDigestAuth
 import logging
 import wave
+from typing import List
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +27,7 @@ class TextToSpeech:
         self.username = "reichm"
         self.password = "AZUPP-TTSserver"
 
-    def synthesize_speech(self, text, voice="czech_male", output_format="wav", output_path=None):
+    def synthesize_speech(self, text, voice="czech_male", output_format="wav", output_path=None) -> str:
         """
         Convert text to speech using the TTS API.
 
@@ -89,16 +90,17 @@ class TextToSpeech:
             logger.error(f"TTS API request failed: {str(e)}")
             raise RuntimeError(f"Failed to convert text to speech: {str(e)}")
 
-    def get_available_voices(self):
+    def get_available_voices(self) -> dict:
         """
         Returns a dictionary of available voices.
 
         Returns:
             dict: Dictionary mapping voice names to engine IDs
         """
-        return self.VOICES.copy()
+        return self.VOICES
 
-    def process_text_chunks(self, text, language="czech", output_format="wav", output_dir=None, chunk_size=1000):
+    def process_text_chunks(self, text, language="czech", output_format="wav",
+                            output_dir=None, chunk_size=1000) -> List[str]:
         """
         Process a text by splitting it into chunks and converting them to speech.
 
@@ -143,7 +145,7 @@ class TextToSpeech:
         return audio_paths
 
     def generate_single_audio_file(self, text, voice="czech_male", output_format="wav", output_path=None,
-                                   chunk_size=4000, progress_callback=None):
+                                   chunk_size=4000, progress_callback=None) -> str:
         """
         Generate a single audio file from a large text by processing in chunks and combining the results.
 
@@ -208,7 +210,7 @@ class TextToSpeech:
         )
 
     def _generate_audio_with_chunks(self, text, voice, output_format, output_path, chunk_size=4000,
-                                    progress_callback=None):
+                                    progress_callback=None) -> str:
         """
         Generate audio by processing text in chunks and combining the results.
 
@@ -285,7 +287,7 @@ class TextToSpeech:
             logger.error(f"Failed to generate audio with chunks: {str(e)}")
             raise RuntimeError(f"Failed to generate audio: {str(e)}")
 
-    def _combine_wav_files(self, input_files, output_file):
+    def _combine_wav_files(self, input_files, output_file) -> str:
         """
         Combine multiple WAV files into a single file.
 
@@ -315,7 +317,7 @@ class TextToSpeech:
             logger.error(f"Failed to combine WAV files: {str(e)}")
             raise RuntimeError(f"Failed to combine WAV files: {str(e)}")
 
-    def _split_text_into_chunks(self, text, chunk_size):
+    def _split_text_into_chunks(self, text, chunk_size) -> List[str]:
         """
         Split a text into chunks of approximately the given size,
         ensuring that chunks end at sentence boundaries.

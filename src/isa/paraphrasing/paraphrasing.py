@@ -2,7 +2,6 @@ import os
 import time
 import threading
 from typing import Optional, Callable, Dict, Any, List
-import requests
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -45,9 +44,7 @@ class TextParaphraser:
         self.current_job = None
         self.paraphrasing_thread = None
 
-    def paraphrase_text(self,
-                        text: str,
-                        callback: Callable[[str, float], None] = None,
+    def paraphrase_text(self, text: str, callback: Callable[[str, float], None] = None,
                         progress_callback: Callable[[float], None] = None,
                         options: Optional[Dict[str, Any]] = None) -> None:
         """
@@ -73,9 +70,7 @@ class TextParaphraser:
         self.paraphrasing_thread.daemon = True
         self.paraphrasing_thread.start()
 
-    def _paraphrase_text_task(self,
-                              text: str,
-                              callback: Callable[[str, float], None],
+    def _paraphrase_text_task(self, text: str, callback: Callable[[str, float], None],
                               progress_callback: Callable[[float], None],
                               options: Optional[Dict[str, Any]]) -> None:
         """
@@ -183,10 +178,7 @@ class TextParaphraser:
         }
         return style_instructions.get(style, style_instructions["standard"])
 
-    def _process_in_chunks(self,
-                           text: str,
-                           chunk_size: int,
-                           progress_callback: Callable[[float], None],
+    def _process_in_chunks(self, text: str, chunk_size: int, progress_callback: Callable[[float], None],
                            options: Optional[Dict[str, Any]]) -> str:
         """
         Process a long text by splitting it into chunks.
